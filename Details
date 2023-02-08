@@ -1,0 +1,494 @@
+#include <iostream>
+#include <iomanip> //use setw It is used to set field width.
+#include <vector> //a class template for sequence containers
+//stores elements of a given type in a linear arrangement,
+//and allows fast random access to any element.
+#include <fstream>//a library that consists of both,
+//ofstream and ifstream
+#include <algorithm>//defines functions for a variety of purposes
+//(e.g. searching, sorting, counting, manipulating)
+//that operate on ranges of elements
+#include <sstream>//a header file that provides templates
+//and types that enable interoperation between stream
+//buffers and string objects.
+#include <conio.h> //use gecth
+#include <string> //used to search whether a substring
+//is present in the main string or not.
+
+using namespace std;
+
+const int NUM_DAYS = 7;
+const int NUM_STAFF = 1;
+
+void saveData(const string staffName[2], const string dayOfWeek[7]) {
+    ofstream file;//output file stream,
+    //to create and write information to files
+    file.open("staff_schedule.txt");
+
+    for (int i = 0; i < NUM_DAYS; i++) {
+        file << dayOfWeek[i] << ": " << staffName[i] << endl;
+    }
+
+    file.close();//close the open file
+    cout << "Data saved to staff_schedule.txt" << endl;
+}
+
+void viewData() {
+    string line;
+    ifstream file("staff_schedule.txt");//input file stream
+    //reads data from files and display.
+    if (file.is_open()) {
+        cout << "Staff Schedule:" << endl;
+        while (getline(file, line)) {
+            cout << line << endl;
+        }
+        file.close();
+    } else {
+        cout << "Unable to open file" << endl;
+    }
+    cout<<""<<endl;
+}
+
+
+class Stock {
+private:
+    int id;
+    string name;
+    int quantity;
+public:
+    Stock(int id, string name, int quantity)
+        : id(id), name(name), quantity(quantity) {}
+    int getId() const
+    {
+        return id;
+        }
+    string getName() const
+    {
+        return name;
+        }
+    int getQuantity() const
+    {
+        return quantity;
+        }
+    friend ostream & operator<<(ostream & os, const Stock & stock)
+    //ostream write data to a file.
+    //friend use to declare a non-member function as a "friend" of a class.
+    //operator writes the contents of a Stock object to an output stream.
+    {
+        os << stock.id << "," << stock.name << "," << stock.quantity;
+        return os;
+        //os is variable in the code that represents an output stream.
+    }
+    void setQuantity(int quantity){
+    this->quantity = quantity;//set the value of quantity
+    //= is access to
+    }
+};
+
+//In C++, an {array} is a fixed-size,
+//homogeneous data structure that stores multiple elements of the same data type.
+//Arrays have a size that must be specified at the time of creation
+//and cannot be changed during runtime.
+//On the other hand, a {vector} is a dynamic array-like data structure //that is part of the Standard Template Library (STL) in C++.
+//It can store elements of any data type and can change its size dynamically,
+//i.e., elements can be added or removed at any time.
+//Unlike arrays, vectors provide many built-in member functions for
+//convenient manipulation of its elements.
+
+//In short, arrays are lower level and have less functionality,
+//while vectors are higher level and offer more functionality and
+//conveniences at the cost of slightly more overhead.
+class StockManagementSystem {
+private:
+    vector<Stock> stocks;
+    //private member variable that stores a collection of 'Stock' object.
+    bool isStockExist(int id)
+    //check if a 'stock' object exist
+    {
+        return find_if(stocks.begin(), stocks.end(), [id](const Stock & stock) {
+            //use algortihm
+         //  search vector and return to boolean if stock found
+            return stock.getId() == id;//
+        }) != stocks.end();//end of range of be search by find_if.
+        //to check if find_if same to stocks.end()
+        //then mean no stock object with match id was found in vector.
+    }
+public:
+
+    void displayStocks() {
+        if (stocks.empty()) {
+            cout << "No stocks found." << endl;
+        } else {
+            cout <<"\n---------------------------------------------------------"<<endl;
+            cout << "ID\t\tName\t\t\tQuantity " << endl;
+            cout <<"---------------------------------------------------------"<<endl;
+            for (const auto & stock : stocks) {
+            //iterates/repeat over each stock in stocks
+                cout << stock.getId() << "\t\t" << setw(20) << left << stock.getName() << "\t" << setw(20) << stock.getQuantity() << endl;
+            //sets the adjustfield to left.
+            }
+        }
+    }
+
+    bool addStock(int id, string name, int quantity) {
+        if (isStockExist(id)) {
+            cout << "Stock already exists / Stock data is invalid." << endl;
+            return false;
+        }
+        stocks.push_back(Stock(id, name, quantity));
+        cout << "Stock added successfully." << endl;
+        return true;//indicate the condition is success
+    }
+
+    bool deleteStock(int id) {
+        auto stockIter = find_if(stocks.begin(), stocks.end(), [id](const Stock & stock) {
+        //auto stockiter variable use to store result of find_if
+        //purpose to store iterator to stock with
+        //match ID so erase can delete the stock.
+            return stock.getId() == id;
+        });
+        if (stockIter == stocks.end()) {
+            cout << "Stock not found." << endl;
+            return false;
+        }
+        stocks.erase(stockIter); //delete stocks
+        cout << "Stock deleted successfully." << endl;
+        return true;
+    }
+
+    bool saveToFile(const string & filename) {
+        ofstream file(filename);
+        if (!file.is_open()) {
+            cout << "Cannot open file." << endl;
+            return false;
+        }
+        for (const auto & stock : stocks) {
+            file << stock << endl;
+        }
+        file.close();
+        cout << "Saved to file successfully." << endl;
+        return true;
+    }
+
+    void loadFromFile(const string & filename) {
+    ifstream file(filename);//open file and read
+    if (!file.is_open()) {
+        cout << "Cannot open file." << endl;
+        return;
+    }
+    stocks.clear();
+    //clear all elements from the stock vector.
+    string line;
+    while (getline(file, line)) {
+    //executes the code inside the loop as lines are read from file
+    //getline_reads a line from file and stores it in line variable
+        string idStr;//use to store id
+        string name;//use to store name
+        string quantityStr;//use to store quantity
+        istringstream ss(line);//Creates an "istringstream" object "ss"
+        //initialized with the "line" string.
+        //An "istringstream" object can be used to extract data
+        //from a string as if it were a stream.
+        getline(ss, idStr, ',');//Extracts a string from the "ss" object
+        //until the comma (',') character and stores it in "idStr".
+        getline(ss, name, ',');//Extracts a string from the "ss" object
+        //until the comma (',') character and stores it in "name".
+        getline(ss, quantityStr, ',');//Extracts a string from the "ss" object
+        //until the comma (',') character and stores it in "quantityStr".
+        int id = stoi(idStr);// Converts the "idStr" string to an integer using the "stoi" function
+        //and stores it in the "id" variable.
+        int quantity = stoi(quantityStr);//Converts the "quantityStr" string to an integer
+        //using the "stoi" function and stores it in the "quantity" variable.
+        stocks.push_back(Stock(id, name, quantity));//add new stock to stocks vector.
+    }
+}
+    bool searchStock(string name) {
+    auto stockIter = find_if(stocks.begin(), stocks.end(), [name](const Stock & stock) {
+    //The result of the find_if algorithm is stored in the iterator stockIter.
+    //auto is use to deduce the type of a variable
+    //For example,vector<int> v = {1, 2, 3};
+    //auto it = v.begin();
+
+        return stock.getName() == name;
+
+    });
+    if (stockIter == stocks.end()) {
+        cout << "\nStock not found." << endl;
+        return false;
+    }
+    cout << "Stock found(ID/Name/Quantity): " << *stockIter << endl;
+    return true;
+}
+ bool increaseStockQuantity(int id, int quantity) {
+    if (quantity < 0 || cin.fail()) {
+        cout << "\nError: Invalid quantity.\n" << endl;
+        return false;
+    }
+    auto stockIter = find_if(stocks.begin(), stocks.end(), [id](const Stock & stock) {
+        return stock.getId() == id;
+    });
+    if (stockIter == stocks.end()) {
+        cout << "\nStock not found.\n" << endl;
+        return false;
+    }
+    stockIter->setQuantity(stockIter->getQuantity() + quantity);
+    //stockIter is iterator that points to the stock in the list that needs to
+    //have its quantity increase
+    //setQuantity() is pass in the result of set.. argument and sets
+    // the quantity of stock to the update value.
+    cout << "\nStock quantity increased successfully.\n" << endl;
+    return true;
+}
+
+bool decreaseStockQuantity(int id, int quantity) {
+    if (quantity < 0 || cin.fail()) {
+        cout << "\nError: Invalid quantity.\n" << endl;
+        return false;
+    }
+    auto stockIter = find_if(stocks.begin(), stocks.end(), [id](const Stock & stock) {
+        return stock.getId() == id;
+    });
+    if (stockIter == stocks.end()) {
+        cout << "\nStock not found.\n" << endl;
+        return false;
+    }
+    if (stockIter->getQuantity() < quantity) {
+        cout << "\nNot enough stock available.\n" << endl;
+        return false;
+    }
+    stockIter->setQuantity(stockIter->getQuantity() - quantity);
+    cout << "\nStock quantity decreased successfully.\n" << endl;
+    return true;
+}
+};
+
+
+string getPassword() {
+string password;
+cout<<""<< endl;
+char ch = _getch();//retrieve a char and first char store in ch
+while (ch != '\r') {// \r is enter key
+if (ch == '\b') {//backspace to erase the char
+if (!password.empty()) {
+cout << "\b \b"; //2 backspace which erase the last char
+password.pop_back();//This line removes the last character from the password string
+}
+} else {
+password += ch;//adds the current character to the password string
+//outputs an asterisk to the console
+cout << '*';
+}
+ch = _getch();// getch retrieves a character from the keyboard
+//without echoing it to the console.
+}
+cout << endl;
+return password;
+}
+
+void exit();
+void schedule();
+
+void exit()
+    {
+    cout << "\n\nTHANKS FOR USING CODING GEEKS STORE MANAGEMENT SYSTEM"<<endl;
+    }
+
+void schedule()
+{
+    string staff_names[NUM_STAFF] = {""};
+    string days_of_week[NUM_DAYS] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+    string staff_schedule[NUM_DAYS][NUM_STAFF];
+    int option;
+
+    cout << "\n\t\t1. New Data of Staff on the working day" << endl;
+    cout << "\n\t\t2. View the schedule" << endl;
+    cout << "\n\t\tEnter your Option:" ;
+    cin >> option;
+
+    if (option == 1) {
+        // Fill in the staff schedule
+        for (int i = 0; i < NUM_DAYS; i++) {
+            for (int j = 0; j < NUM_STAFF; j++) {
+                cout << "\nEnter the name of the staff working on " << days_of_week[i] << ": ";
+                cin >> staff_schedule[i][j];
+            }
+        }
+
+        // Display the staff schedule
+        cout << "\nStaff Schedule:" << endl;
+        for (int i = 0; i < NUM_DAYS; i++) {
+            cout << days_of_week[i] << ": ";
+            for (int j = 0; j < NUM_STAFF; j++) {
+                cout << staff_schedule[i][j] << "";
+            }
+            cout << endl;
+        }
+
+        // Save the staff schedule to a file
+        saveData(staff_schedule[0], days_of_week);
+    } else if (option == 2) {
+        // View the saved staff schedule
+        viewData();
+    } else {
+        cout << "Invalid option" << endl;
+    }
+}
+
+int main() {
+cout<<"                 _______ _______ ______   ___ __    _ _______      _______ _______ _______ ___   _ _______            "<<endl;
+cout<<"                |       |       |      |_|   |  |  | |       |    |       |       |       |   | | |       |           "<<endl;
+cout<<"                |   ____|   _   |  _     |   |   |_| |    ___|    |    ___|    ___|    ___|   |_| |  _____|           "<<endl;
+cout<<"                |  |       | |  | | |    |   |       |   | __     |   | __|   |___|   |___|      _| |_____            "<<endl;
+cout<<"                |  |____   |_|  | |_|    |   |  _    |   ||  |    |   ||  |    ___|    ___|     |_|_____  |           "<<endl;
+cout<<"                |       |       |       _|   | | |   |   |_| |    |   |_| |   |___|   |___|    _  |_____| |           "<<endl;
+cout<<"                |_______|_______|______| |___|_|  |__|_______|    |_______|_______|_______|___| |_|_______|           "<<endl;
+
+cout<<" "<<endl;
+cout<<" "<<endl;
+cout<<"========================================================================================================================"<<endl;
+cout<<" "<<endl;
+cout<<"                               WELCOME TO CODING GEEKS STORE MANAGEMENT SYSTEM !                                        "<<endl;
+cout<<" "<<endl;
+cout<<"========================================================================================================================"<<endl;
+string password = "";
+cout<<"\n\n\n\t\t\t\t\t Please enter the password : \n"<< endl;
+password = getPassword();
+while (password != "123")
+{
+cout << "\n\t\t\t\t\t\tInvalid password" ;
+cout<<"\n\n\n\t\t\t\t\t Please enter the password : \n"<< endl;
+password = getPassword();
+}
+
+
+        system("cls");
+    StockManagementSystem sms;
+    //sms is a variable name/object in the provided code
+    //and represents to an instance of the class.
+    sms.loadFromFile("stocks.txt");
+    int choice;
+
+    do {
+        cout<<"========================================================================================================================"<<endl;
+        cout<<" "<<endl;
+        cout<<"                               CODING GEEKS STORE MANAGEMENT SYSTEM MENU                                       "<<endl;
+        cout<<" "<<endl;
+        cout<<"========================================================================================================================"<<endl;
+        cout << "\n\t\t1. Display Stocks" << endl;
+        cout << "\n\t\t2. Add Stock" << endl;
+        cout << "\n\t\t3. Delete Stock" << endl;
+        cout << "\n\t\t4. Search Stock" <<endl;
+        cout << "\n\t\t5. Refill Stock Quantity"<<endl;
+        cout << "\n\t\t6. Decrease Stock Quantity"<<endl;
+        cout << "\n\t\t7. Working Schedule"<<endl;
+        cout << "\n\t\t8. Save and Exit" << endl;
+        cout << "\nEnter your choice[1/2/3/4/5/6/7/8]: ";
+        cin >> choice;
+        switch (choice) {
+        case 1:
+            sms.displayStocks();
+            cout << ""<<endl;
+            system("pause");
+            system("cls");
+            break;
+        case 2: {
+            int id;
+            string name;
+            int quantity;
+            cout << "\nEnter ID: ";
+            cin >> id;
+             if (!cin) // check if input is not numeric
+            {
+            cin.clear(); // clear error flags
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // discard the input buffer
+            cout << "Error: Stock ID must be a numeric value." << endl;
+            bool addstock;
+            }
+            cout << "\nEnter name: ";
+            cin >> name;
+
+            cout << "\nEnter quantity: ";
+            cin >> quantity;
+             if (!cin) // check if input is not numeric
+            {
+            cin.clear(); // clear error flags
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // discard the input buffer
+            cout << "Error: Stock quantity must be a numeric value." << endl;
+            }
+            sms.addStock(id, name, quantity);
+            system("pause");
+            system("cls");
+            break;
+            }
+        case 3: {
+            int id;
+            cout << "\nEnter ID: ";
+            cin >> id;
+            if (!cin) // check if input is not numeric
+            {
+            cin.clear(); // clear error flags
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // discard the input buffer
+            cout << "Error: Stock ID must be a numeric value." << endl;
+            bool deletestock;
+            }
+            sms.deleteStock(id);
+            system("pause");
+            system("cls");
+            break;
+            }
+        case 4:
+            {
+            string name;
+            cout << "\nEnter the Name of stock to search: ";
+            cin >> name;
+            sms.searchStock(name);
+            system("pause");
+            system("cls");
+            break;
+            }
+        case 5:
+            {
+            int id;
+            int quantity;
+            cout << "\nEnter ID: ";
+            cin >> id;
+            cout << "\nEnter quantity: ";
+            cin >> quantity;
+            sms.increaseStockQuantity(id, quantity);
+
+            break;
+            }
+        case 6:
+            {
+             int id;
+            int quantity;
+            cout << "\nEnter ID: ";
+            cin >> id;
+            cout << "\nEnter quantity: ";
+            cin >> quantity;
+            sms.decreaseStockQuantity(id,quantity);
+
+            break;
+            }
+            case 7:{
+            schedule();
+            system("pause");
+            system("cls");
+            break;
+            }
+        case 8:{
+            sms.saveToFile("stocks.txt");
+            exit();
+            system("pause");
+            break;
+            }
+        default:
+            cout << "Invalid choice." << endl;
+            break;
+        }
+
+    } while (choice != 8);
+    return 0;
+}
+
+
